@@ -19,3 +19,7 @@
 - http protocols, methods
 - Install Postman app and make a workspace/collection > test API call
 - Write logic to handle GET, POST, PATCH, PUT DELETE API Calls and test them on Postman
+- Explore routing and use of ?, +, (), * in the routes
+- Use of regex in routes /a/, /.*fly$/, make custom regex
+- Reading the query params in the routes
+- Reading the dynamic routes

@@ -1,3 +1,4 @@
+# Notes
 ### Ep 1- Creating our express server
 - Create a git repo
 - Initialize the repo
@@ -14,3 +15,7 @@
 - Add .gitignore file to ignore the node_modules
 - Create a remote repo on github
 - Push all code to remote origin
+- order of the routes metter a lot
+- http protocols, methods
+- Install Postman app and make a workspace/collection > test API call
+- Write logic to handle GET, POST, PATCH, PUT DELETE API Calls and test them on Postman

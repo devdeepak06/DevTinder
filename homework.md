@@ -54,3 +54,6 @@ app.get('/users/:id', (req, res) => {
 - Create a free cluster on MongoDB Atlas and connect to the cluster
 - install mongoose and create a connection to the cluster
 - call the connectDB function and connect to the database before starting the server on port 7777
+- json vs js object
+- Add the express.json() middleware to parse the incoming request body
+- make your api to dynamically connect to the database

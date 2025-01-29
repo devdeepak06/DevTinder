@@ -1,6 +1,7 @@
 // src/models/User.js
 const mongoose = require('mongoose');
-const userSchema = new mongoose.Schema({
+const { Schema } = require('mongoose');
+const userSchema = new Schema({
   firstName: String,
   lastName: String,
   email: { type: String, required: true, unique: true },

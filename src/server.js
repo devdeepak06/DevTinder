@@ -5,61 +5,69 @@ const app = express();
 
 app.use(express.json());
 
-// Signup endpoint - post api to create the user
+// Signup endpoint - POST /signup
 app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
   try {
+    const { email, password } = req.body;
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send("Email already in use.");
+    }
+    const user = new User(req.body);
+
     await user.save();
     res.status(201).send("User added successfully!");
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).send("Email already exists.");
+    }
     res.status(500).send("Error saving the user: " + err.message);
   }
 });
 
-// Get user by email
+// Get user by email - GET /user?email=example@example.com
 app.get("/user", async (req, res) => {
   try {
-    const user = await User.find({ email: req.body.email });
-    if (!user && user.length === 0) {
+    const user = await User.findOne({ email: req.query.email });
+    // const user = await User.find({ email: req.body.email });
+    if (!user) {
       return res.status(404).send("User not found.");
-    } else {
-      res.send(user);
     }
+    res.json(user);
   } catch (err) {
     res.status(500).send("Error getting the user: " + err.message);
   }
 });
 
-// Feed api- GET /feed - get all the users from database
+// Get all users - GET /feed
 app.get("/feed", async (req, res) => {
   try {
     const users = await User.find({});
-    res.send(users);
+    res.json(users);
   } catch (err) {
     res.status(500).send("Error getting users: " + err.message);
   }
 });
 
-
-// Get user by id
+// Get user by ID - GET /user/:id
 app.get("/user/:id", async (req, res) => {
   try {
-    const user = await User.findById({ _id: req.params.id });
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).send("User not found.");
     }
     res.send(user);
   } catch (err) {
-    console.error("Error getting the user:", err.message);
     res.status(500).send("Error getting the user: " + err.message);
   }
 });
 
-// delete api
-app.delete("/user", async (req, res) => {
+// Delete user by ID - DELETE /user/:id
+app.delete("/user/:id", async (req, res) => {
   try {
-    const userId = req.body.id;
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
       return res.status(404).send("User not found.");
     }
@@ -68,19 +76,36 @@ app.delete("/user", async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("Error deleting the user:", err.message);
     res.status(500).send("Error deleting the user: " + err.message);
   }
 });
 
-// Update user 
-app.patch("/user", async (req, res) => {
+// Update user - PATCH /user/:id
+app.patch("/user/:id", async (req, res) => {
   try {
     const userId = req.params.id;
     // Ensure no unintended fields are updated
-    const updates = req.body;
+    const data = req.body;
+    const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
+    const isUpdateAllowed = Object.keys(data).every((k) =>
+      ALLOWED_UPDATES.includes(k)
+    );
+    if (!isUpdateAllowed) {
+      return res.status(400).send({ error: "Invalid updates!" });
+    }
+
+    if (data.skills && data.skills.length > 10) {
+      return res.status(400).send({ error: "Skills cannot be more than 10" });
+    }
+    if (new Set(data.skills).size !== data.skills.length) {
+      return res.status(400).send({ error: "Duplicate skills are not allowed" });
+    }
+
     // Update the user and return the updated document
-    const user = await User.findByIdAndUpdate(userId, updates, { new: true });
+    const user = await User.findByIdAndUpdate(userId, data, {
+      new: true,
+      runValidators: true
+    });
     if (!user) {
       return res.status(404).send("User not found.");
     }

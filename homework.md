@@ -57,3 +57,4 @@ app.get('/users/:id', (req, res) => {
 - json vs js object
 - Add the express.json() middleware to parse the incoming request body
 - make your api to dynamically connect to the database
+- validator npm package to validate the incoming request body data - good package to use for validation in the real world scenario

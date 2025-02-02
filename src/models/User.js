@@ -30,7 +30,6 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: true,
-      select: false,
       validate: {
         validator: validator.isStrongPassword,
         message: "Password must contain at least 8 characters, including an uppercase letter, a number, and a special character."

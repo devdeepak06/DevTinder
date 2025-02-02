@@ -2,20 +2,34 @@ const express = require('express');
 const connectDB = require('./config/database');
 const User = require('./models/User');
 const app = express();
-
+const { validateSignUpData } = require("./utils/validation");
+const bcrypt = require('bcrypt');
+const validator = require("validator");
 app.use(express.json());
 
 // Signup endpoint - POST /signup
 app.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    //validation of data
+    validateSignUpData(req);
+    const { firstName, lastName, email, password } = req.body;
+
+    //Encrypt the password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).send("Email already in use.");
+      return res.status(400).send("Invalid credentials!");
     }
-    const user = new User(req.body);
+    // create a new user
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      password: passwordHash
+    });
 
     await user.save();
     res.status(201).send("User added successfully!");
@@ -23,7 +37,42 @@ app.post("/signup", async (req, res) => {
     if (err.code === 11000) {
       return res.status(400).send("Email already exists.");
     }
-    res.status(500).send("Error saving the user: " + err.message);
+    res.status(500).send("ERROR : " + err.message);
+  }
+});
+
+// Login endpoint - post /login
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Trim and validate email
+    if (!email || !password) {
+      return res.status(400).send("Email and password are required!");
+    }
+
+    const trimmedEmail = email.trim();
+    if (!validator.isEmail(trimmedEmail)) {
+      return res.status(401).send("Invalid credentials!");
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user || !user.password) {
+      return res.status(401).send("Invalid credentials!");
+    }
+
+    // Compare password
+    const ispasswordValid = await bcrypt.compare(password, user.password);
+    if (!ispasswordValid) {
+      return res.status(401).send("Invalid credentials!");
+    }
+
+    // Login successful
+    res.status(200).send("Login Successful!");
+
+  } catch (err) {
+    res.status(500).send("ERROR: " + err.message);
   }
 });
 
@@ -33,11 +82,11 @@ app.get("/user", async (req, res) => {
     const user = await User.findOne({ email: req.query.email });
     // const user = await User.find({ email: req.body.email });
     if (!user) {
-      return res.status(404).send("User not found.");
+      return res.status(404).send("Invalid credentials!");
     }
     res.json(user);
   } catch (err) {
-    res.status(500).send("Error getting the user: " + err.message);
+    res.status(500).send("ERROR: " + err.message);
   }
 });
 
@@ -56,11 +105,11 @@ app.get("/user/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return res.status(404).send("User not found.");
+      return res.status(404).send("Invalid credentials!");
     }
     res.send(user);
   } catch (err) {
-    res.status(500).send("Error getting the user: " + err.message);
+    res.status(500).send("ERROR: " + err.message);
   }
 });
 
@@ -69,11 +118,10 @@ app.delete("/user/:id", async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
-      return res.status(404).send("User not found.");
+      return res.status(404).send("Invalid credentials!");
     }
     res.send({
-      message: "User deleted successfully!",
-      user,
+      message: "User deleted successfully!"
     });
   } catch (err) {
     res.status(500).send("Error deleting the user: " + err.message);
@@ -107,12 +155,12 @@ app.patch("/user/:id", async (req, res) => {
       runValidators: true
     });
     if (!user) {
-      return res.status(404).send("User not found.");
+      return res.status(404).send("Invalid credentials!");
     }
     res.send(user);
   } catch (err) {
-    console.error("Error updating the user:", err.message);
-    res.status(500).send("Error updating the user: " + err.message);
+    console.error("ERROR ", err.message);
+    res.status(500).send("ERROR " + err.message);
   }
 });
 

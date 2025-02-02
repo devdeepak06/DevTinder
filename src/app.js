@@ -1,6 +1,6 @@
 const express = require('express');
 // const cors = require('cors');
-// const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const connectDB = require('./config/database');
 const User = require('./models/User');
 
@@ -11,7 +11,7 @@ app.use(express.json());
 // Signup endpoint - POST /signup
 app.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     // Check if email already exists
     const existingUser = await User.findOne({ email });
@@ -20,17 +20,22 @@ app.post("/signup", async (req, res) => {
     }
 
     // Hash password before saving
-    // const salt = await bcrypt.genSalt(10);
-    // req.body.password = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    const user = new User(req.body);
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      password: passwordHash
+    });
     await user.save();
     res.status(201).send("User added successfully!");
   } catch (err) {
     if (err.code === 11000) {
       return res.status(400).send("Email already exists.");
     }
-    res.status(500).send("Error saving the user: " + err.message);
+    res.status(500).send("ERROR : " + err.message);
   }
 });
 

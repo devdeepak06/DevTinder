@@ -69,15 +69,17 @@ app.post("/login", async (req, res) => {
     }
 
     // Compare password
-    const ispasswordValid = await bcrypt.compare(password, user.password);
+    const ispasswordValid = await user.validatePassword(password);
     if (!ispasswordValid) {
       return res.status(401).send("Invalid credentials!");
     }
     // create jwt token
-    const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    const token = await user.getJWT();
 
     // cookie is set with the jwt token
-    res.cookie("token", token);
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 604800000), // 7 days
+    });
     // Login successful
     res.status(200).send("Login Successful!");
 

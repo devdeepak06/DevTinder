@@ -5,8 +5,14 @@ const app = express();
 const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require('bcrypt');
 const validator = require("validator");
-app.use(express.json());
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+const { userAuth } = require('./middlewares/auth');
+dotenv.config();
 
+app.use(express.json());
+app.use(cookieParser());
 // Signup endpoint - POST /signup
 app.post("/signup", async (req, res) => {
   try {
@@ -67,13 +73,31 @@ app.post("/login", async (req, res) => {
     if (!ispasswordValid) {
       return res.status(401).send("Invalid credentials!");
     }
-
+    // create jwt token
+    const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    // console.log(token);
+    // cookie is set with the jwt token
+    res.cookie("token", token);
     // Login successful
     res.status(200).send("Login Successful!");
 
   } catch (err) {
     res.status(500).send("ERROR: " + err.message);
   }
+});
+
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user);
+  } catch (err) {
+    res.status(500).send("ERROR: " + err.message);
+  }
+});
+
+app.post("/logout", async (req, res) => {
+  res.clearCookie("token");
+  res.send("Logged out successfully!");
 });
 
 // Get user by email - GET /user?email=example@example.com

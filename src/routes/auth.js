@@ -10,7 +10,11 @@ const authRouter = express.Router();
 authRouter.post("/signup", async (req, res) => {
   try {
     //validation of data
-    validateSignUpData(req);
+    const validationResult = validateSignUpData(req);
+    if (!validationResult.isValid) {
+      return res.status(400).json({ error: validationResult.error });
+    }
+
     const { firstName, lastName, email, password } = req.body;
 
     //Encrypt the password
@@ -31,11 +35,10 @@ authRouter.post("/signup", async (req, res) => {
     });
 
     await user.save();
-    res.status(201).send("User added successfully!");
+    res.status(201).json({
+      message: `${user.firstName}, your profile was created successfully! Welcome to DevTinder.`
+    });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).send("Email already exists.");
-    }
     res.status(500).send("ERROR : " + err.message);
   }
 });
@@ -61,20 +64,22 @@ authRouter.post("/login", async (req, res) => {
       return res.status(401).send("Invalid credentials!");
     }
 
-    // Compare password
+    // Compare password using custom validatePassword method
     const ispasswordValid = await user.validatePassword(password);
     if (!ispasswordValid) {
       return res.status(401).send("Invalid credentials!");
     }
-    // create jwt token
+    // Generate JWT token
     const token = await user.getJWT();
 
     // cookie is set with the jwt token
     res.cookie("token", token, {
-      expires: new Date(Date.now() + 604800000), // 7 days
+      expires: new Date(Date.now() + 604800000),
     });
     // Login successful
-    res.status(200).send("Login Successful!");
+    res.status(200).json({
+      message: `${user.firstName}, login successful!`
+    });
 
   } catch (err) {
     res.status(500).send("ERROR: " + err.message);
@@ -82,8 +87,13 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.post("/logout", userAuth, async (req, res) => {
-  res.clearCookie("token");
-  res.send("Logged out successfully!");
+  // res.clearCookie("token");
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+  });
+  res.json({
+    message: `${req.user.firstName}, logged out successfully!`
+  });
 });
 
 

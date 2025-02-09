@@ -96,5 +96,14 @@ authRouter.post("/logout", userAuth, async (req, res) => {
   });
 });
 
+authRouter.get("/feed", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
+  } catch (err) {
+    res.status(500).send("Error getting users: " + err.message);
+  }
+});
+
 
 module.exports = authRouter;

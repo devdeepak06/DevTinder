@@ -57,13 +57,43 @@ userRouter.get("/connections", userAuth, async (req, res) => {
   }
 });
 
-userRouter.get("/feed", async (req, res) => {
+userRouter.get("/feed", userAuth, async (req, res) => {
   try {
-    const users = await User.find({});
-    res.json({
-      message: "Users fetched successfully!",
-      data: users,
-    });
+
+    // User should see all the user cards except
+    // 1. his/her own card
+    // 2. his/her connections
+    // 3. ignored peoples
+    // 4. already sent the connection request
+
+    const loggedInUser = req.user;
+    // console.log(loggedInUser);
+
+    const page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    limit = limit > 50 ? 50 : limit;
+    const skip = (page - 1) * limit; //to skip the users
+
+    // Find all connection requests ( sent + received)
+    const connectionsRequests = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }]
+    }).select("fromUserId toUserId");
+
+    const hideUsersFromFeed = new Set();
+    connectionsRequests.forEach((req) => {
+      hideUsersFromFeed.add(req.fromUserId.toString());
+      hideUsersFromFeed.add(req.toUserId.toString());
+    })
+
+    // console.log(hideUsersFromFeed);
+    const users = await User.find({
+      $and: [
+        { _id: { $nin: Array.from(hideUsersFromFeed) } },
+        { _id: { $ne: loggedInUser._id } },
+      ],
+    })
+      .select(USER_SAFE_DATA).skip(skip).limit(limit);
+    res.json({ data: users });
   } catch (err) {
     res.status(500).send("Error getting users: " + err.message);
   }

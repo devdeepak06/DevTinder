@@ -3,13 +3,19 @@ const connectDB = require('./config/database');
 const app = express();
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+const cors = require("cors");
 // const authRouter = require('./routes/auth');
 // const profileRouter = require('./routes/profile');
 // const requestRouter = require('./routes/request');
 const apiRouter = require('./routes/index');
 
 dotenv.config();
+var corsOptions = {
+  origin: 'http://localhost:5173',
+  credentials: true
+}
 
+app.use(cors(corsOptions))
 app.use(express.json());
 app.use(cookieParser());
 

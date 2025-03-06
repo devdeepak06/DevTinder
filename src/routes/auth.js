@@ -36,7 +36,8 @@ authRouter.post("/signup", async (req, res) => {
 
     await user.save();
     res.status(201).json({
-      message: `${user.firstName}, your profile was created successfully! Welcome to DevTinder.`
+      message: `${user.firstName}, your profile was created successfully! Welcome to DevTinder.`,
+      data:user
     });
   } catch (err) {
     res.status(500).send("ERROR : " + err.message);

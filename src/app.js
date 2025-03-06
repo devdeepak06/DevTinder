@@ -12,7 +12,7 @@ const apiRouter = require('./routes/index');
 dotenv.config();
 var corsOptions = {
   origin: 'http://localhost:5173',
-  credentials: true
+  credentials: true 
 }
 
 app.use(cors(corsOptions))
